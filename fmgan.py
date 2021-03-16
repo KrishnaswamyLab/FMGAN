@@ -165,6 +165,29 @@ def adversarial_loss(logits, labels):
 
     return tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels)
 
+def Embedder_convolutional(x, nfilt, outdim, activation=lrelu, is_training=True):
+    h1 = tf.layers.conv2d(x, nfilt, kernel_size=3, strides=2, name='h1')
+    h1 = bn(h1, 'bnh1', is_training=is_training)
+    h1 = activation(h1)
+
+    h2 = tf.layers.conv2d(h1, nfilt * 2, kernel_size=3, strides=2, name='h2')
+    h2 = bn(h2, 'bnh2', is_training=is_training)
+    h2 = activation(h2)
+
+    h3 = tf.layers.conv2d(h2, nfilt * 4, kernel_size=3, strides=2, name='h3')
+    h3 = bn(h3, 'bnh3', is_training=is_training)
+    h3 = activation(h3)
+
+    h4 = tf.layers.conv2d(h2, nfilt * 8, kernel_size=3, strides=2, name='h4')
+    h4 = bn(h4, 'bnh4', is_training=is_training)
+    h4 = activation(h4)
+
+    out = tf.layers.dense(tf.layers.flatten(h4), outdim, name='out')
+
+    return out
+
+
+
 tf.reset_default_graph()
 tfis_training = tf.placeholder(tf.bool, [], name='tfis_training')
 
@@ -179,6 +202,21 @@ with tf.variable_scope('generator_condition', reuse=tf.AUTO_REUSE):
 with tf.variable_scope('discriminator_condition', reuse=tf.AUTO_REUSE):
     embedded_condition_D = Embedder(pre_embedding_condition_D, nfilt, outdim=2, is_training=tfis_training)
     embedded_condition_D = nameop(embedded_condition_D, 'embedded_condition_D')
+
+
+# to use convolutional networks, replace with:
+# imdim = 128
+# nfilt = 32
+# outdim = 100
+# condition = tf.placeholder(tf.float32, [None, imdim, imdim, 3], name='condition')
+
+# with tf.variable_scope('generator_condition', reuse=tf.AUTO_REUSE):
+#     embedded_condition_G = Embedder_convolutional(condition, nfilt=1 * nfilt, outdim=outdim, is_training=tfis_training)
+#     embedded_condition_G = pymba.nameop(embedded_condition_G, 'embedded_condition_G')
+
+# with tf.variable_scope('discriminator_condition', reuse=tf.AUTO_REUSE):
+#     embedded_condition_D = Embedder_convolutional(condition, nfilt=2 * nfilt, outdim=outdim, is_training=tfis_training)
+#     embedded_condition_D = pymba.nameop(embedded_condition_D, 'embedded_condition_D')
 ##################################################
 
 
